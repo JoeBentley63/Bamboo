@@ -3,6 +3,12 @@ using System.Collections;
 
 public class player : MonoBehaviour {
 
+	public string moveAxis;
+	public KeyCode jumpButton;
+	public KeyCode catchButton;
+	public KeyCode throwButton;
+	public KeyCode diveButton;
+
 	public GameObject ball;
 	public Color color;
 	public float runVelocity;
@@ -17,7 +23,8 @@ public class player : MonoBehaviour {
 	public bool canDoubleJump = false;
 	public bool IsTouchingGround = false;
 	public bool tryingToCatchBall = false;
-
+	private bool hasBall = false;
+	private bool isClimbing = false;
 	private Ball ballScript;
 
 	// Use this for initialization
@@ -30,15 +37,12 @@ public class player : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		IsTouchingGround = TouchingGround();
-		if(Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.RightArrow)){
-			//playerRigidbody.velocity = new Vector2(0, playerRigidbody.velocity.y);
-		}
 
-		if(Input.GetKey(KeyCode.DownArrow)){
+		if(Input.GetKey(diveButton)){
 			playerRigidbody.AddForce(new Vector3(0, -dashVelocity, 0));
 		}
 
-		else if(Input.GetKeyDown(KeyCode.Space) && (IsTouchingGround || canDoubleJump)){
+		else if(Input.GetKeyDown(jumpButton) && (IsTouchingGround || canDoubleJump)){
 			playerRigidbody.velocity = new Vector2(playerRigidbody.velocity.x, 0);
 			playerRigidbody.AddForce(new Vector3(0, jumpVelocity, 0));
 
@@ -47,27 +51,42 @@ public class player : MonoBehaviour {
 			}
 		}
 
-		playerRigidbody.AddForce(new Vector3(Input.GetAxis("Horizontal") * runVelocity, 0, 0));
+		playerRigidbody.AddForce(new Vector3(Input.GetAxis(moveAxis) * runVelocity, 0, 0));
 
 		CapMaxSpeed();
 		CatchBall();
 	}
 
 	void CatchBall(){
-		tryingToCatchBall = Input.GetKey(KeyCode.LeftControl);
+		tryingToCatchBall = Input.GetKey(catchButton);
 		Vector2 differenceBetweenPlayerAndBallPos = (playerRigidbody.transform.position - ball.transform.position);
 	
 		if(tryingToCatchBall && differenceBetweenPlayerAndBallPos.magnitude < ballAttractionRadius){
 			ballRigidbody.AddForce(differenceBetweenPlayerAndBallPos * ballPullModifier);
 		}
 
-		if(Input.GetKeyDown(KeyCode.LeftAlt)) ballScript.Release(playerRigidbody.velocity);
+		if(Input.GetKeyDown(throwButton) && hasBall) {
+			hasBall = false;
+			ballScript.Release(playerRigidbody.velocity);
+		}
 	}
 
-	void OnTriggerEnter2D(Collider2D collision){
-		if(tryingToCatchBall && collision.gameObject == ball){
+	void OnTriggerEnter2D(Collider2D collider){
+		if(tryingToCatchBall && collider.gameObject == ball){
 			ballScript.Caught(this.transform);
+			hasBall = true;
 			ball.transform.position = this.transform.position + this.transform.up;
+		}
+
+		if(collider.tag == "bamboo" && tryingToCatchBall){
+			playerRigidbody.gravityScale = 0;
+			canDoubleJump = true;
+		}
+	}
+
+	void OnTriggerExit2D(Collider2D collider){
+		if(collider.tag == "bamboo"){
+			playerRigidbody.isKinematic = false;
 		}
 	}
 
