@@ -53,6 +53,8 @@ public class player : MonoBehaviour {
 
 		playerRigidbody.AddForce(new Vector3(Input.GetAxis(moveAxis) * runVelocity, 0, 0));
 
+		hasBall = transform.childCount > 0; //added
+
 		CapMaxSpeed();
 		CatchBall();
 	}
@@ -66,7 +68,6 @@ public class player : MonoBehaviour {
 		}
 
 		if(Input.GetKeyDown(throwButton) && hasBall) {
-			hasBall = false;
 			ballScript.Release(playerRigidbody.velocity);
 		}
 	}
@@ -74,19 +75,19 @@ public class player : MonoBehaviour {
 	void OnTriggerEnter2D(Collider2D collider){
 		if(tryingToCatchBall && collider.gameObject == ball){
 			ballScript.Caught(this.transform);
-			hasBall = true;
 			ball.transform.position = this.transform.position + this.transform.up;
 		}
 
-		if(collider.tag == "bamboo" && tryingToCatchBall){
-			playerRigidbody.gravityScale = 0;
+		if(collider.tag == "bamboo"){
+			playerRigidbody.velocity = Vector2.zero;
+			playerRigidbody.gravityScale = 0f;
 			canDoubleJump = true;
 		}
 	}
 
 	void OnTriggerExit2D(Collider2D collider){
 		if(collider.tag == "bamboo"){
-			playerRigidbody.isKinematic = false;
+			playerRigidbody.gravityScale = 2.5f;
 		}
 	}
 
